@@ -1,6 +1,8 @@
 package org.example.lab2.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.example.lab2.model.Category;
+import org.example.lab2.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -8,20 +10,25 @@ import java.util.List;
 
 @Service
 public class CategoryService {
-    private final List<Category> categories = new ArrayList<>();
+    private final CategoryRepository categoryRepository;
 
+    public CategoryService(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
+
+    @Transactional
     public Category createCategory(Category category) {
-        category.setId((long) (categories.size() + 1));
-        categories.add(category);
-        return category;
+        return categoryRepository.save(category);
     }
 
+    @Transactional
     public List<Category> getAllCategories() {
-        return categories;
+        return categoryRepository.findAll();
     }
 
+    @Transactional
     public void deleteAllCategories() {
-        categories.clear();
+        categoryRepository.deleteAll();
     }
 }
 

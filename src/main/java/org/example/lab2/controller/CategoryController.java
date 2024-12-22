@@ -2,35 +2,63 @@ package org.example.lab2.controller;
 
 import org.example.lab2.model.Category;
 import org.example.lab2.service.CategoryService;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/categories")
 public class CategoryController {
+
     private final CategoryService categoryService;
 
+    @Autowired
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
 
-    @PostMapping
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        Category createdCategory = categoryService.createCategory(category);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdCategory);
-    }
-
+    // Отримати всі категорії
     @GetMapping
-    public List<Category> getCategories() {
+    public List<Category> getAllCategories() {
         return categoryService.getAllCategories();
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteCategories() {
-        categoryService.deleteAllCategories();
-        return ResponseEntity.noContent().build();
+    // Отримати категорію за ID
+    @GetMapping("/{id}")
+    public Category getCategoryById(@PathVariable Long id) {
+        return categoryService.getAllCategories().stream()
+                .filter(category -> category.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
+    // Створити нову категорію
+    @PostMapping
+    public Category createCategory(@RequestBody Category category) {
+        return categoryService.createCategory(category);
+    }
+
+    // Оновити існуючу категорію
+    @PutMapping("/{id}")
+    public Category updateCategory(@PathVariable Long id, @RequestBody Category updatedCategory) {
+        return categoryService.getAllCategories().stream()
+                .filter(category -> category.getId().equals(id))
+                .findFirst()
+                .map(category -> {
+                    category.setName(updatedCategory.getName());
+                    return categoryService.createCategory(category);
+                })
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
+    // Видалити категорію
+    @DeleteMapping("/{id}")
+    public String deleteCategory(@PathVariable Long id) {
+        categoryService.getAllCategories().stream()
+                .filter(category -> category.getId().equals(id))
+                .findFirst()
+                .ifPresent(category -> categoryService.deleteAllCategories());
+        return "Category deleted successfully";
     }
 }

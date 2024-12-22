@@ -1,49 +1,56 @@
 package org.example.lab2.controller;
 
 import org.example.lab2.model.Record;
-import org.example.lab2.service.RecordService;
-import org.springframework.http.ResponseEntity;
+import org.example.lab2.repository.RecordRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/record")
+@RequestMapping("/records")
 public class RecordController {
-    private final RecordService recordService;
 
-    public RecordController(RecordService recordService) {
-        this.recordService = recordService;
-    }
+    @Autowired
+    private RecordRepository recordRepository;
 
-    @PostMapping
-    public ResponseEntity<Record> createRecord(@RequestBody Record record) {
-        Record createdRecord = recordService.createRecord(record);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdRecord);
-    }
-
+    // Отримати всі записи
     @GetMapping
-    public ResponseEntity<List<Record>> getRecords(@RequestParam(required = false) Long userId,
-                                                   @RequestParam(required = false) Long categoryId) {
-        if (userId == null && categoryId == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        List<Record> records = recordService.getRecords(userId, categoryId);
-        return ResponseEntity.ok(records);
+    public List<Record> getAllRecords() {
+        return recordRepository.findAll();
     }
 
-    @GetMapping("/{recordId}")
-    public ResponseEntity<Record> getRecord(@PathVariable Long recordId) {
-        return recordService.getRecordById(recordId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    // Отримати запис за ID
+    @GetMapping("/{id}")
+    public Record getRecordById(@PathVariable Long id) {
+        return recordRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Record not found"));
     }
 
-    @DeleteMapping("/{recordId}")
-    public ResponseEntity<Void> deleteRecord(@PathVariable Long recordId) {
-        recordService.deleteRecordById(recordId);
-        return ResponseEntity.noContent().build();
+    // Створити новий запис
+    @PostMapping
+    public Record createRecord(@RequestBody Record record) {
+        return recordRepository.save(record);
+    }
+
+    // Оновити існуючий запис
+    @PutMapping("/{id}")
+    public Record updateRecord(@PathVariable Long id, @RequestBody Record updatedRecord) {
+        return recordRepository.findById(id)
+                .map(record -> {
+                    record.setUserId(updatedRecord.getUserId());
+                    record.setCategoryId(updatedRecord.getCategoryId());
+                    record.setDateTime(updatedRecord.getDateTime());
+                    record.setAmount(updatedRecord.getAmount());
+                    return recordRepository.save(record);
+                })
+                .orElseThrow(() -> new RuntimeException("Record not found"));
+    }
+
+    // Видалити запис
+    @DeleteMapping("/{id}")
+    public String deleteRecord(@PathVariable Long id) {
+        recordRepository.deleteById(id);
+        return "Record deleted successfully";
     }
 }
